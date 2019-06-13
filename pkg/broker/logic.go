@@ -45,6 +45,7 @@ func truePtr() *bool {
 
 func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogResponse, error) {
 	// Your catalog business logic goes here
+	glog.Infof("Starting Business Logic...")
 	service1 := new(osb.Service)
 	service1.Name = "Service-1"
 	service1.ID = "service-1-id"
@@ -104,7 +105,7 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 			},
 		},
 	}
-
+	glog.Infof("Service 1 created...")
 	service2 := new(osb.Service)
 	service2.Name = "Service-2"
 	service2.ID = "service-2-id"
@@ -164,11 +165,9 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 			},
 		},
 	}
-	
-	services := []osb.Service{}
-	services[0] = *service1
-	services[1] = *service2
-
+	glog.Infof("Service 2 created...")
+	services := []osb.Service{*service1, *service2}
+	glog.Infof("Service List created...")
 	response := &broker.CatalogResponse{}
 	osbResponse := &osb.CatalogResponse{
 		Services: services,
