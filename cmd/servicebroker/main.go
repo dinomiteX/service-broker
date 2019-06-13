@@ -17,10 +17,10 @@ import (
 	clientrest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/dinomiteX/service-broker/pkg/broker"
 	"github.com/pmorie/osb-broker-lib/pkg/metrics"
 	"github.com/pmorie/osb-broker-lib/pkg/rest"
 	"github.com/pmorie/osb-broker-lib/pkg/server"
-	"github.com/pmorie/osb-starter-pack/pkg/broker"
 )
 
 var options struct {
@@ -111,7 +111,7 @@ func runWithContext(ctx context.Context) error {
 		s.Router.Use(tr.Middleware)
 	}
 
-	glog.Infof("Starting broker!")
+	glog.Infof("Starting Dino broker!")
 
 	if options.Insecure {
 		err = s.Run(ctx, addr)

@@ -7,8 +7,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/pmorie/osb-broker-lib/pkg/broker"
 
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"reflect"
+
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
 // NewBusinessLogic is a hook that is called with the Options the program is run
@@ -44,41 +45,56 @@ func truePtr() *bool {
 
 func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogResponse, error) {
 	// Your catalog business logic goes here
-	response := &broker.CatalogResponse{}
-	osbResponse := &osb.CatalogResponse{
-		Services: []osb.Service{
-			{
-				Name:          "example-starter-pack-service",
-				ID:            "4f6e6cf6-ffdd-425f-a2c7-3c9258ad246a",
-				Description:   "The example service from the osb starter pack!",
-				Bindable:      true,
-				PlanUpdatable: truePtr(),
-				Metadata: map[string]interface{}{
-					"displayName": "Example starter pack service",
-					"imageUrl":    "https://avatars2.githubusercontent.com/u/19862012?s=200&v=4",
+	service1 := new(osb.Service)
+	service1.Name = "Service-1"
+	service1.ID = "service-1-id"
+	service1.Bindable = true
+	service1.PlanUpdatable = truePtr()
+	service1.Plans = []osb.Plan{
+		{
+			Name:        "plan-1",
+			ID:          "service-1-plan-1-id",
+			Description: "Description Plan 1",
+			Free:        truePtr(),
+			Schemas: &osb.Schemas{
+				ServiceInstance: &osb.ServiceInstanceSchema{
+					Create: &osb.InputParametersSchema{
+						Parameters: map[string]interface{}{
+							"type": "object",
+							"properties": map[string]interface{}{
+								"color": map[string]interface{}{
+									"type":    "string",
+									"default": "Clear",
+									"enum": []string{
+										"Clear",
+										"Beige",
+										"Grey",
+									},
+								},
+							},
+						},
+					},
 				},
-				Plans: []osb.Plan{
-					{
-						Name:        "default",
-						ID:          "86064792-7ea2-467b-af93-ac9694d96d5b",
-						Description: "The default plan for the starter pack example service",
-						Free:        truePtr(),
-						Schemas: &osb.Schemas{
-							ServiceInstance: &osb.ServiceInstanceSchema{
-								Create: &osb.InputParametersSchema{
-									Parameters: map[string]interface{}{
-										"type": "object",
-										"properties": map[string]interface{}{
-											"color": map[string]interface{}{
-												"type":    "string",
-												"default": "Clear",
-												"enum": []string{
-													"Clear",
-													"Beige",
-													"Grey",
-												},
-											},
-										},
+			},
+		},
+		{
+			Name:        "plan-2",
+			ID:          "service-1-plan-2-id",
+			Description: "Description plan 2",
+			Free:        truePtr(),
+			Schemas: &osb.Schemas{
+				ServiceInstance: &osb.ServiceInstanceSchema{
+					Create: &osb.InputParametersSchema{
+						Parameters: map[string]interface{}{
+							"type": "object",
+							"properties": map[string]interface{}{
+								"color": map[string]interface{}{
+									"type":    "string",
+									"default": "Clear",
+									"enum": []string{
+										"Clear",
+										"Beige",
+										"Grey",
 									},
 								},
 							},
@@ -88,6 +104,77 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 			},
 		},
 	}
+
+	service2 := new(osb.Service)
+	service2.Name = "Service-2"
+	service2.ID = "service-2-id"
+	service2.Bindable = true
+	service2.PlanUpdatable = truePtr()
+	service2.Plans = []osb.Plan{
+		{
+			Name:        "plan-1",
+			ID:          "service-2-plan-1-id",
+			Description: "Description Plan 1",
+			Free:        truePtr(),
+			Schemas: &osb.Schemas{
+				ServiceInstance: &osb.ServiceInstanceSchema{
+					Create: &osb.InputParametersSchema{
+						Parameters: map[string]interface{}{
+							"type": "object",
+							"properties": map[string]interface{}{
+								"color": map[string]interface{}{
+									"type":    "string",
+									"default": "Clear",
+									"enum": []string{
+										"Clear",
+										"Beige",
+										"Grey",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:        "plan-2",
+			ID:          "service-2-plan-2-id",
+			Description: "Description plan 2",
+			Free:        truePtr(),
+			Schemas: &osb.Schemas{
+				ServiceInstance: &osb.ServiceInstanceSchema{
+					Create: &osb.InputParametersSchema{
+						Parameters: map[string]interface{}{
+							"type": "object",
+							"properties": map[string]interface{}{
+								"color": map[string]interface{}{
+									"type":    "string",
+									"default": "Clear",
+									"enum": []string{
+										"Clear",
+										"Beige",
+										"Grey",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	
+	services := []osb.Service{}
+	services[0] = *service1
+	services[1] = *service2
+
+	response := &broker.CatalogResponse{}
+	osbResponse := &osb.CatalogResponse{
+		Services: services,
+	}
+
+	//test := &osb.CatalogResponse{}
 
 	glog.Infof("catalog response: %#+v", osbResponse)
 
@@ -121,7 +208,7 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 			// Instance ID in use, this is a conflict.
 			description := "InstanceID in use"
 			return nil, osb.HTTPStatusCodeError{
-				StatusCode: http.StatusConflict,
+				StatusCode:  http.StatusConflict,
 				Description: &description,
 			}
 		}

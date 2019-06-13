@@ -1,8 +1,8 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceBinding
 metadata:
-  name: example-starter-pack-service-binding
+  name: service-broker-dino-binding
   namespace: test-ns
 spec:
   instanceRef:
-    name: example-starter-pack-service
+    name: service-broker-dino-service

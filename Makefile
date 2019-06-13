@@ -33,11 +33,7 @@ deploy-helm: image ## Deploys image with helm
 	helm upgrade --install broker-skeleton --namespace broker-skeleton \
 	charts/servicebroker \
 	--set image="$(IMAGE):$(TAG)",imagePullPolicy="$(PULL)"
-
-deploy-openshift: image ## Deploys image to openshift
-	oc project osb-starter-pack || oc new-project osb-starter-pack
-	openshift/deploy.sh $(IMAGE):$(TAG)
-
+	
 create-ns: ## Cleans up the namespaces
 	kubectl create ns test-ns
 
