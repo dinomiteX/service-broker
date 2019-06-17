@@ -49,6 +49,7 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 	service1 := new(osb.Service)
 	service1.Name = "Service-1"
 	service1.ID = "service-1-id"
+	service1.Description="First Service Made by Dino"
 	service1.Bindable = true
 	service1.PlanUpdatable = truePtr()
 	service1.Plans = []osb.Plan{
@@ -109,6 +110,7 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 	service2 := new(osb.Service)
 	service2.Name = "Service-2"
 	service2.ID = "service-2-id"
+	service2.Description="Second Service Made by Dino"
 	service2.Bindable = true
 	service2.PlanUpdatable = truePtr()
 	service2.Plans = []osb.Plan{

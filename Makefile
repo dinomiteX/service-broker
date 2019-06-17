@@ -35,13 +35,20 @@ deploy-helm: image ## Deploys image with helm
 	--set image="$(IMAGE):$(TAG)",imagePullPolicy="$(PULL)"
 	
 create-ns: ## Cleans up the namespaces
-	kubectl create ns dino-instance
+	kubectl create ns dino-instance || true
 
 provision: create-ns ## Provisions a service instance
 	kubectl apply -f manifests/service-instance.yaml
 
 bind: ## Creates a binding
 	kubectl apply -f manifests/service-binding.yaml
+
+delns: ## Deletes Namespace, Service Instance , Service Binding
+	kubectl delete ns service-broker-dino
+	kubectl delete ns dino-instance
+
+pods: ## Get Service Broker Pod
+	kubectl get po -n service-broker-dino
 
 help: ## Shows the help
 	@echo 'Usage: make <OPTIONS> ... <TARGETS>'
@@ -52,4 +59,4 @@ help: ## Shows the help
         awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ''
 
-.PHONY: build test linux image clean push deploy-helm deploy-openshift create-ns provision bind help
+.PHONY: ibuild test linux image clean push deploy-helm deploy-openshift create-ns provision bind delns pods help
