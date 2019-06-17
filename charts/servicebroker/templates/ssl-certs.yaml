@@ -6,9 +6,9 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "fullname" . }}-osb-starter-pack-cert
+  name: {{ .Release.Name }}-osb-starter-pack-cert
   labels:
-    app: {{ template "fullname" . }}-osb-starter-pack
+    app: {{ .Release.Name }}-osb-starter-pack
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"

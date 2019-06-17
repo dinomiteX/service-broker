@@ -3,19 +3,19 @@ ifdef USE_SUDO_FOR_DOCKER
 	SUDO_CMD = sudo
 endif
 
-IMAGE ?= quay.io/osb-starter-pack/servicebroker
-TAG ?= $(shell git describe --tags --always)
-PULL ?= IfNotPresent
+IMAGE ?= dinomitex/service-broker
+TAG ?= latest
+PULL ?= Always
 
 build: ## Builds the starter pack
-	go build -i github.com/pmorie/osb-starter-pack/cmd/servicebroker
+	go build -i github.com/dinomiteX/service-broker/cmd/servicebroker
 
 test: ## Runs the tests
 	go test -v $(shell go list ./... | grep -v /vendor/ | grep -v /test/)
 
 linux: ## Builds a Linux executable
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-	go build -o servicebroker-linux --ldflags="-s" github.com/pmorie/osb-starter-pack/cmd/servicebroker
+	go build -o servicebroker-linux --ldflags="-s" github.com/dinomiteX/service-broker/cmd/servicebroker
 
 image: linux ## Builds a Linux based image
 	cp servicebroker-linux image/servicebroker
@@ -30,12 +30,12 @@ push: image ## Pushes the image to dockerhub, REQUIRES SPECIAL PERMISSION
 	$(SUDO_CMD) docker push "$(IMAGE):$(TAG)"
 
 deploy-helm: image ## Deploys image with helm
-	helm upgrade --install broker-skeleton --namespace broker-skeleton \
+	helm upgrade --install service-broker-dino --namespace service-broker-dino \
 	charts/servicebroker \
 	--set image="$(IMAGE):$(TAG)",imagePullPolicy="$(PULL)"
 	
 create-ns: ## Cleans up the namespaces
-	kubectl create ns test-ns
+	kubectl create ns dino-instance
 
 provision: create-ns ## Provisions a service instance
 	kubectl apply -f manifests/service-instance.yaml

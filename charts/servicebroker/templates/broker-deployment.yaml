@@ -30,6 +30,7 @@ spec:
         args:
         - --port
         - "8443"
+          #  - --insecure
         {{- if .Values.tls.cert}}
         - --tlsCert
         - "{{ .Values.tls.cert }}"
@@ -66,7 +67,7 @@ spec:
       - name: osb-starter-pack-ssl
         secret:
           defaultMode: 420
-          secretName: dino-osb-starter-pack-cert
+          secretName: {{ .Release.Name }}-osb-starter-pack-cert
           items:
           - key: tls.crt
             path: starterpack.crt

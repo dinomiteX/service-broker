@@ -2,10 +2,10 @@ apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
   name: service-broker-dino-service
-  namespace: test-ns
+  namespace: dino-instance 
 spec:
   clusterServiceClassExternalName: service-broker-dino-service
-  clusterServicePlanExternalName: plan-1
+  clusterServicePlanExternalName: service-1-plan-1
   parameters:
     param-1: value-1
     param-2: value-2

@@ -1,6 +1,6 @@
 # Default values for the broker-skeleton
 # Image to use
-image: service-broker:latest
+image: dinomitex/dino-service-broker:latest
 # ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
 imagePullPolicy: Always
 authenticate: true
