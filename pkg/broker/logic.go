@@ -1,14 +1,21 @@
 package broker
 
 import (
+	//"github.com/kubernetes/client-go/kubernetes/typed/core/v1"
 	"net/http"
 	"sync"
 
 	"github.com/golang/glog"
 	"github.com/pmorie/osb-broker-lib/pkg/broker"
 
-	"reflect"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
+	"reflect"
+	//rest "k8s.io/client-go/rest"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
@@ -46,10 +53,11 @@ func truePtr() *bool {
 func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogResponse, error) {
 	// Your catalog business logic goes here
 	glog.Infof("Starting Business Logic...")
+
 	service1 := new(osb.Service)
 	service1.Name = "Service-1"
 	service1.ID = "service-1-id"
-	service1.Description="First Service Made by Dino"
+	service1.Description = "First Service Made by Dino"
 	service1.Bindable = true
 	service1.PlanUpdatable = truePtr()
 	service1.Plans = []osb.Plan{
@@ -110,7 +118,7 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 	service2 := new(osb.Service)
 	service2.Name = "Service-2"
 	service2.ID = "service-2-id"
-	service2.Description="Second Service Made by Dino"
+	service2.Description = "Second Service Made by Dino"
 	service2.Bindable = true
 	service2.PlanUpdatable = truePtr()
 	service2.Plans = []osb.Plan{
@@ -186,8 +194,9 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 
 func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.RequestContext) (*broker.ProvisionResponse, error) {
 	// Your provision business logic goes here
-
 	// example implementation:
+	glog.Infof("Starting Provisioning...")
+	glog.Infof("%d", request.Parameters)
 	b.Lock()
 	defer b.Unlock()
 
@@ -198,6 +207,7 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 		ServiceID: request.ServiceID,
 		PlanID:    request.PlanID,
 		Params:    request.Parameters,
+		Context:   request.Context,
 	}
 
 	// Check to see if this is the same instance
@@ -216,6 +226,59 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 	}
 	b.instances[request.InstanceID] = exampleInstance
 
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err)
+	}
+
+	deploymentsClient := clientset.AppsV1().Deployments("test-ns")
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "demo-deployment",
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: int32Ptr(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": "demo",
+				},
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "demo",
+					},
+				},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Name:  "web",
+							Image: "nginx:1.12",
+							Ports: []v1.ContainerPort{
+								{
+									Name:          "http",
+									Protocol:      v1.ProtocolTCP,
+									ContainerPort: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	result, err := deploymentsClient.Create(deployment)
+	if err != nil {
+		panic(err)
+	}
+	glog.Infof("Deployment created!")
+	glog.Infof("Result: %s", result.String())
 	if request.AcceptsIncomplete {
 		response.Async = b.async
 	}
@@ -300,8 +363,11 @@ type exampleInstance struct {
 	ServiceID string
 	PlanID    string
 	Params    map[string]interface{}
+	Context   map[string]interface{}
 }
 
 func (i *exampleInstance) Match(other *exampleInstance) bool {
 	return reflect.DeepEqual(i, other)
 }
+
+func int32Ptr(i int32) *int32 { return &i }
