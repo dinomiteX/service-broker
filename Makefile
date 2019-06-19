@@ -4,7 +4,7 @@ ifdef USE_SUDO_FOR_DOCKER
 endif
 
 IMAGE ?= dinomitex/service-broker
-TAG ?= $(shell git describe --abbrev 0)
+TAG ?= $(shell git describe --abbrev=0)
 PULL ?= Always
 
 build: ## Builds the starter pack
