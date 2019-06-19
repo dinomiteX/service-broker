@@ -7,5 +7,5 @@ spec:
   clusterServiceClassExternalName: Service-1
   clusterServicePlanExternalName: plan-1
   parameters:
-    param-1: value-1
-    param-2: value-2
+    namespace: test-ns2
+    podname: pod-demo-1

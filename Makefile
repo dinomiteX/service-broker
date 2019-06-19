@@ -29,7 +29,7 @@ clean: ## Cleans up build artifacts
 push: image ## Pushes the image to dockerhub, REQUIRES SPECIAL PERMISSION
 	$(SUDO_CMD) docker push "$(IMAGE):$(TAG)"
 
-deploy-helm: image ## Deploys image with helm
+deploy-helm: ## Deploys image with helm
 	helm upgrade --install service-broker-dino --namespace service-broker-dino \
 	charts/servicebroker \
 	--set image="$(IMAGE):$(TAG)",imagePullPolicy="$(PULL)"

@@ -22,6 +22,7 @@ import (
 	"github.com/pmorie/osb-broker-lib/pkg/rest"
 	"github.com/pmorie/osb-broker-lib/pkg/server"
 )
+var CliVersion = "0.0.1"
 
 var options struct {
 	broker.Options
@@ -65,7 +66,7 @@ func run() error {
 
 func runWithContext(ctx context.Context) error {
 	if flag.Arg(0) == "version" {
-		fmt.Printf("%s/%s\n", path.Base(os.Args[0]), "0.1.0")
+		fmt.Printf("%s/%s\n", path.Base(os.Args[0]), CliVersion)
 		return nil
 	}
 	if (options.TLSCert != "" || options.TLSKey != "") &&
