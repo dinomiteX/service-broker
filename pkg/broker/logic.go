@@ -2,16 +2,16 @@ package broker
 
 import (
 	//"github.com/kubernetes/client-go/kubernetes/typed/core/v1"
+	"fmt"
 	"net/http"
 	"sync"
 
 	"github.com/golang/glog"
 	"github.com/pmorie/osb-broker-lib/pkg/broker"
 
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
 	"reflect"
@@ -28,7 +28,7 @@ func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 	// BusinessLogic here.
 	return &BusinessLogic{
 		async:     o.Async,
-		instances: make(map[string]*exampleInstance, 10),
+		instances: make(map[string]*instance, 10),
 	}, nil
 }
 
@@ -40,7 +40,7 @@ type BusinessLogic struct {
 	// Synchronize go routines.
 	sync.RWMutex
 	// Add fields here! These fields are provided purely as an example
-	instances map[string]*exampleInstance
+	instances map[string]*instance
 }
 
 var _ broker.Interface = &BusinessLogic{}
@@ -196,13 +196,13 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 	// Your provision business logic goes here
 	// example implementation:
 	glog.Infof("Starting Provisioning...")
-	glog.Infof("%d", request.Parameters)
+
 	b.Lock()
 	defer b.Unlock()
 
 	response := broker.ProvisionResponse{}
 
-	exampleInstance := &exampleInstance{
+	instance := &instance{
 		ID:        request.InstanceID,
 		ServiceID: request.ServiceID,
 		PlanID:    request.PlanID,
@@ -210,9 +210,17 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 		Context:   request.Context,
 	}
 
+	glog.Infof("Checking for Params...")
+	if instance.Params["namespace"] == "" {
+		return nil, fmt.Errorf("Namespace Param not set or empty")
+	}
+	if instance.Params["podname"] == "" {
+		return nil, fmt.Errorf("Podname Param not set or empty")
+	}
+
 	// Check to see if this is the same instance
 	if i := b.instances[request.InstanceID]; i != nil {
-		if i.Match(exampleInstance) {
+		if i.Match(instance) {
 			response.Exists = true
 			return &response, nil
 		} else {
@@ -224,7 +232,7 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 			}
 		}
 	}
-	b.instances[request.InstanceID] = exampleInstance
+	b.instances[request.InstanceID] = instance
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -235,50 +243,22 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 		panic(err)
 	}
 
-	deploymentsClient := clientset.AppsV1().Deployments("test-ns")
-
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "demo-deployment",
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: int32Ptr(1),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app": "demo",
-				},
-			},
-			Template: v1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app": "demo",
-					},
-				},
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
-						{
-							Name:  "web",
-							Image: "nginx:1.12",
-							Ports: []v1.ContainerPort{
-								{
-									Name:          "http",
-									Protocol:      v1.ProtocolTCP,
-									ContainerPort: 80,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	result, err := deploymentsClient.Create(deployment)
+	obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(podjson), nil, nil)
 	if err != nil {
 		panic(err)
 	}
-	glog.Infof("Deployment created!")
-	glog.Infof("Result: %s", result.String())
+	pod := obj.(*v1.Pod)
+	pod.Namespace = instance.Params["namespace"].(string)
+	pod.Name = instance.Params["podname"].(string)
+	glog.Infof("Creating Pod %s in Namespace %s...", pod.Name, pod.Namespace)
+	pod, err = clientset.CoreV1().Pods(pod.Namespace).Create(pod)
+	if err != nil {
+		panic(err)
+	}
+	glog.Infof("Pod created!")
+	glog.Infof("Pod Details: \nResourcename: %v\nCreationtime: %v", pod.String(), pod.CreationTimestamp)
+
+	glog.Infof("%v", response)
 	if request.AcceptsIncomplete {
 		response.Async = b.async
 	}
@@ -357,8 +337,8 @@ func (b *BusinessLogic) ValidateBrokerAPIVersion(version string) error {
 
 // example types
 
-// exampleInstance is intended as an example of a type that holds information about a service instance
-type exampleInstance struct {
+// instance is intended as an example of a type that holds information about a service instance
+type instance struct {
 	ID        string
 	ServiceID string
 	PlanID    string
@@ -366,8 +346,36 @@ type exampleInstance struct {
 	Context   map[string]interface{}
 }
 
-func (i *exampleInstance) Match(other *exampleInstance) bool {
+func (i *instance) Match(other *instance) bool {
 	return reflect.DeepEqual(i, other)
 }
 
 func int32Ptr(i int32) *int32 { return &i }
+
+var podjson = `apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: workdir
+      mountPath: /usr/share/nginx/html
+  # These containers are run during pod initialization
+  initContainers:
+  - name: install
+    image: busybox
+    command:
+    - wget
+    - "-O"
+    - "/work-dir/index.html"
+    - http://kubernetes.io
+    volumeMounts:
+    - name: workdir
+      mountPath: "/work-dir"
+  dnsPolicy: Default
+  volumes:
+  - name: workdir
+    emptyDir: {}`
