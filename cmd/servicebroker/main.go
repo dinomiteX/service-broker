@@ -113,7 +113,7 @@ func runWithContext(ctx context.Context) error {
 		s.Router.Use(tr.Middleware)
 	}
 
-	glog.Infof("Starting Dino broker Version: %s!", CliVersion)
+	glog.Infof("Starting Dino broker with version: %s!", CliVersion)
 
 	if options.Insecure {
 		err = s.Run(ctx, addr)
