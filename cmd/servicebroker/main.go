@@ -22,6 +22,7 @@ import (
 	"github.com/pmorie/osb-broker-lib/pkg/rest"
 	"github.com/pmorie/osb-broker-lib/pkg/server"
 )
+
 var CliVersion = "0.0.1"
 
 var options struct {
@@ -112,7 +113,7 @@ func runWithContext(ctx context.Context) error {
 		s.Router.Use(tr.Middleware)
 	}
 
-	glog.Infof("Starting Dino broker!")
+	glog.Infof("Starting Dino broker Version: %s!", CliVersion)
 
 	if options.Insecure {
 		err = s.Run(ctx, addr)
